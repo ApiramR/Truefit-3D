@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.backend.truefit3d.Truefit3dApplicationTests
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.722 s -- in com.backend.truefit3d.Truefit3dApplicationTests
