@@ -1,0 +1,18 @@
+# Python specific
+venv/
+*.pyc
+__pycache__/
+.env
+
+# Git specific
+.git/
+.gitignore
+
+# IDE specific
+.idea/
+.vscode/
+
+# Other
+*.log
+*.tmp
+*.swp

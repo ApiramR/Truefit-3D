@@ -1,0 +1,33 @@
+# Requires Python 3.8
+
+accelerate==0.26.1
+av
+#basicsr
+cloudpickle
+config==0.5.1
+# detectron2 needs specific installation, often not via pip directly. # this is is docker file
+# Example: pip install 'git+https://github.com/facebookresearch/detectron2.git'
+# Or find wheels matching your Python/CUDA/PyTorch version. Check Detectron2 docs.
+# detectron2 @ git+https://github.com/facebookresearch/detectron2.git
+diffusers==0.25.0
+einops==0.7.0
+fastapi>=0.100.0 # Added for FastAPI
+fvcore # Dependency for detectron2
+huggingface-hub==0.19.4
+numpy==1.24.4
+omegaconf # Often used by detectron2/hydra
+onnxruntime==1.16.2 # Using CPU version based on code. Use onnxruntime-gpu if running ONNX on GPU.
+opencv-python-headless==4.7.0.72 # Changed from opencv-python for server environments
+pillow==9.4.0
+pycocotools # Often a dependency for detectron2/evaluation
+python-multipart>=0.0.5 # Added for FastAPI file uploads
+scikit-image==0.21.0
+scipy==1.10.1
+# torch version should be compatible with your target CUDA version (e.g., G4dn often uses CUDA 11.x)
+# Check https://pytorch.org/get-started/previous-versions/ for specific install commands if needed.
+torch==2.0.1
+torchaudio==2.0.2
+torchvision==0.15.2
+tqdm==4.64.1
+transformers==4.36.2
+uvicorn[standard]>=0.23.0 # Added for FastAPI server
