@@ -19,10 +19,10 @@ export default function ImageUpload({ onImageUpload, className }: ImageUploadPro
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      if (file.size > 2 * 1024 * 1024) { // 2MB limit
         toast({
           title: 'Error',
-          description: 'File size must be less than 5MB',
+          description: 'File size must be less than 2MB',
           variant: 'destructive',
         });
         return;

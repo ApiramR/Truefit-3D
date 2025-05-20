@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { authApi } from '../services/api';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -14,20 +15,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [username, setUsername] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check for existing token and username on mount
-    const token = localStorage.getItem('token');
-    const storedUsername = localStorage.getItem('username');
-    
-    if (token && storedUsername) {
-      setIsAuthenticated(true);
-      setUsername(storedUsername);
-    } else {
-      // If no token or username, ensure we're logged out
-      setIsAuthenticated(false);
-      setUsername(null);
-      localStorage.removeItem('token');
-      localStorage.removeItem('username');
-    }
+    const validateToken = async () => {
+      const token = localStorage.getItem('token');
+      const storedUsername = localStorage.getItem('username');
+      
+      if (token && storedUsername) {
+        try {
+          // Verify token by making a request to get profile
+          await authApi.getProfile();
+          setIsAuthenticated(true);
+          setUsername(storedUsername);
+        } catch (error) {
+          // If token is invalid, clear everything
+          console.error('Token validation failed:', error);
+          setIsAuthenticated(false);
+          setUsername(null);
+          localStorage.removeItem('token');
+          localStorage.removeItem('username');
+        }
+      } else {
+        // If no token or username, ensure we're logged out
+        setIsAuthenticated(false);
+        setUsername(null);
+        localStorage.removeItem('token');
+        localStorage.removeItem('username');
+      }
+    };
+
+    validateToken();
   }, []);
 
   const login = async (token: string, username: string) => {

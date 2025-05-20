@@ -16,16 +16,22 @@ export function LoginPage() {
   })
   const navigate = useNavigate()
   const { toast } = useToastContext()
-  const { login } = useAuth()
+  const { login, isAuthenticated } = useAuth()
   const [searchParams] = useSearchParams()
 
   useEffect(() => {
+    // Redirect if already authenticated
+    if (isAuthenticated) {
+      navigate('/');
+      return;
+    }
+
     // Handle OAuth2 callback
     const code = searchParams.get('code');
     if (code) {
       handleOAuth2Callback(code);
     }
-  }, [searchParams]);
+  }, [searchParams, isAuthenticated, navigate]);
 
   const handleOAuth2Callback = async (code: string) => {
     setIsLoading(true);

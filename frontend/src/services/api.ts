@@ -1,5 +1,6 @@
 import axios from 'axios';
 
+//const API_BASE_URL = 'http://localhost:8000';
 const API_BASE_URL = 'https://truefit-3d-production.up.railway.app/';
 
 const api = axios.create({
@@ -13,7 +14,15 @@ const api = axios.create({
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    // For multipart/form-data requests, we need to set the Authorization header
+    // but not the Content-Type header as it will be set automatically with the boundary
+    const contentType = config.headers['Content-Type'];
+    if (typeof contentType === 'string' && contentType.includes('multipart/form-data')) {
+      config.headers.Authorization = `Bearer ${token}`;
+      delete config.headers['Content-Type']; // Let axios set the correct Content-Type with boundary
+    } else {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
   }
   return config;
 }, (error) => {
@@ -62,11 +71,11 @@ export interface ClothData {
   name: string;
   description?: string;
   price?: string;
-  size?: string;
+  size: string;
   color?: string;
   material?: string;
   brand?: string;
-  size_metrics?: string;
+  size_metrics: string;
   neckType?: string;
   sleeveType?: string;
   fitType?: string;
@@ -234,8 +243,13 @@ const authApi = {
 };
 
 const clothApi = {
-  uploadCloth: async (file: File, data: ClothData) => {
+  uploadCloth: async (file: File, data: ClothData): Promise<any> => {
     try {
+      // Validate required fields
+      if (!data.typ || !data.size || !data.size_metrics) {
+        throw new Error('Type, size, and size metrics are required');
+      }
+
       const formData = new FormData();
       formData.append('file', file);
       formData.append('data', JSON.stringify(data));
@@ -245,10 +259,13 @@ const clothApi = {
           'Content-Type': 'multipart/form-data',
         },
       });
+
       return response.data;
     } catch (error) {
+      console.error('Upload error:', error);
       if (axios.isAxiosError(error)) {
-        throw new Error(error.response?.data || 'Failed to upload clothing item');
+        const errorMessage = error.response?.data?.message || error.response?.data || 'Failed to upload cloth';
+        throw new Error(errorMessage);
       }
       throw error;
     }
@@ -283,13 +300,28 @@ const clothApi = {
 
   favoriteCloth: async (clothId: string): Promise<{ message: string; token?: string }> => {
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
       console.log('Sending favorite request with clothId:', clothId);
-      const response = await api.post('/favorite-cloth',clothId);
+      const response = await api.post('/favorite-cloth', { clothId }, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
       console.log('Favorite response:', response.data);
       return response.data;
     } catch (error) {
       console.error('Favorite error:', error);
       if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('username');
+          window.location.href = '/login';
+        }
         throw new Error(error.response?.data || 'Failed to favorite clothing item');
       }
       throw error;
@@ -297,13 +329,23 @@ const clothApi = {
   },
   unfavoriteCloth: async (clothId: string): Promise<{ message: string; token?: string }> => {
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
       console.log('Sending unfavorite request with clothId:', clothId);
-      const response = await api.post('/unfavorite-cloth',clothId);
+      const response = await api.post('/unfavorite-cloth', { clothId });
       console.log('unFavorite response:', response.data);
       return response.data;
     } catch (error) {
       console.error('unFavorite error:', error);
       if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('username');
+          window.location.href = '/login';
+        }
         throw new Error(error.response?.data || 'Failed to unfavorite clothing item');
       }
       throw error;
@@ -311,7 +353,7 @@ const clothApi = {
   },
   likeCombination: async (combinationId: string): Promise<string> => {
     try {
-      const response = await api.post('/like-combination', { code: combinationId });
+      const response = await api.post('/like-combination', { code: combinationId.toString() });
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -323,7 +365,7 @@ const clothApi = {
 
   dislikeCombination: async (combinationId: string): Promise<string> => {
     try {
-      const response = await api.post('/dislike-combination', { code: combinationId });
+      const response = await api.post('/dislike-combination', { code: combinationId.toString() });
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -376,6 +418,45 @@ const clothApi = {
     } catch (error) {
       if (axios.isAxiosError(error)) {
         throw new Error(error.response?.data || 'Failed to fetch wardrobes shared by you');
+      }
+      throw error;
+    }
+  },
+
+  likeCloth: async (clothId: string): Promise<{ message: string }> => {
+    const token = localStorage.getItem('token');
+    if (!token) throw new Error('No authentication token found');
+    try {
+      console.log('Sending like request with token:', token);
+      const response = await api.post('/like-cloth', { clothId }, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Like error:', error);
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('username');
+        window.location.href = '/login';
+      }
+      throw error;
+    }
+  },
+  dislikeCloth: async (clothId: string): Promise<{ message: string }> => {
+    const token = localStorage.getItem('token');
+    if (!token) throw new Error('No authentication token found');
+    try {
+      console.log('Sending dislike request with token:', token);
+      const response = await api.post('/dislike-cloth', { clothId }, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Dislike error:', error);
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('username');
+        window.location.href = '/login';
       }
       throw error;
     }

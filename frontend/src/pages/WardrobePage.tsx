@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useToastContext } from '../contexts/ToastContext'
 import { clothApi } from '../services/api'
 import AddClothModal from '../components/AddClothModal'
+import { AuthenticatedImage } from '../components/AuthenticatedImage'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 
@@ -74,6 +75,7 @@ export function WardrobePage() {
   const [wardrobesSharedByMe, setWardrobesSharedByMe] = useState<SharedWardrobe[]>([])
   const [selectedSharedWardrobe, setSelectedSharedWardrobe] = useState<string | null>(null);
   const [sharedWardrobeItems, setSharedWardrobeItems] = useState<Record<string, SharedWardrobeItem[]>>({});
+  const [likedCombinations, setLikedCombinations] = useState<{ [id: string]: boolean }>({});
 
   useEffect(() => {
     const token = localStorage.getItem('token')
@@ -120,7 +122,7 @@ export function WardrobePage() {
             id: item.id.toString(),
             name: `T-shirt - ${item.brand || 'Unknown Brand'}`,
             category: 'tshirts',
-            image: item.imgUrl,
+            image: item.imgUrl || '',
             material: item.material,
             brand: item.brand,
             size: item.size,
@@ -138,7 +140,7 @@ export function WardrobePage() {
             id: item.id.toString(),
             name: `Jeans - ${item.brand || 'Unknown Brand'}`,
             category: 'jeans',
-            image: item.imgUrl,
+            image: item.imgUrl || '',
             material: item.material,
             brand: item.brand,
             size: item.size,
@@ -155,7 +157,7 @@ export function WardrobePage() {
             id: item.id.toString(),
             name: `Skirt - ${item.brand || 'Unknown Brand'}`,
             category: 'skirts',
-            image: item.imgUrl,
+            image: item.imgUrl || '',
             material: item.material,
             brand: item.brand,
             size: item.size,
@@ -167,15 +169,12 @@ export function WardrobePage() {
       
       setItems(allItems)
     } catch (error) {
+      console.error('Error loading outfits:', error);
       toast({
         title: 'Error',
-        description: 'Failed to load outfits',
+        description: 'Failed to load wardrobe items',
         variant: 'destructive',
-      })
-      // If unauthorized, redirect to login
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        navigate('/login')
-      }
+      });
     }
   }
 
@@ -196,76 +195,21 @@ export function WardrobePage() {
     }
   }
 
-  const handleFavorite = async (itemId: string) => {
+  const handleLike = async (clothId: string) => {
     try {
-      console.log('Attempting to favorite item with ID:', itemId);
-      const response = await clothApi.favoriteCloth(itemId);
-      console.log('Favorite response:', response);
-      if (response.message === "Added to favorites") {
-        if (selectedSharedWardrobe) {
-          // Update the shared wardrobe items
-          setSharedWardrobeItems(prev => {
-            const newItems = { ...prev };
-            Object.keys(newItems).forEach(category => {
-              newItems[category] = newItems[category].map(item => {
-                if (item.item.id === itemId) {
-                  return { ...item, isFavorite: true };
-                }
-                return item;
-              });
-            });
-            return newItems;
-          });
-        } else {
-          // Update personal wardrobe items
-          setItemPreferences(prev => ({ ...prev, [itemId]: true }));
-        }
-        toast({
-          title: 'Success',
-          description: 'Item added to favorites',
-        });
-      }
-    } catch (error) {
-      console.error('Error favoriting item:', error);
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to favorite item',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleUnfavorite = async (itemId: string) => {
-    try {
-      const response = await clothApi.unfavoriteCloth(itemId);
-      if (response.message === "Removed from favorites") {
-        if (selectedSharedWardrobe) {
-          // Update the shared wardrobe items
-          setSharedWardrobeItems(prev => {
-            const newItems = { ...prev };
-            Object.keys(newItems).forEach(category => {
-              newItems[category] = newItems[category].map(item => {
-                if (item.item.id === itemId) {
-                  return { ...item, isFavorite: false };
-                }
-                return item;
-              });
-            });
-            return newItems;
-          });
-        } else {
-          // Update personal wardrobe items
-          setItemPreferences(prev => ({ ...prev, [itemId]: false }));
-        }
-        toast({
-          title: 'Success',
-          description: 'Item removed from favorites',
-        });
+      if (likedCombinations[clothId]) {
+        await clothApi.dislikeCloth(clothId);
+        setLikedCombinations(prev => ({ ...prev, [clothId]: false }));
+        toast({ title: 'Unliked', description: 'Cloth unliked.' });
+      } else {
+        await clothApi.likeCloth(clothId);
+        setLikedCombinations(prev => ({ ...prev, [clothId]: true }));
+        toast({ title: 'Liked', description: 'Cloth liked!' });
       }
     } catch (error) {
       toast({
         title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to unfavorite item',
+        description: error instanceof Error ? error.message : 'Failed to like/unlike cloth',
         variant: 'destructive',
       });
     }
@@ -377,38 +321,42 @@ export function WardrobePage() {
 
   const filteredItems = items
     .filter(item => {
-      // Category filter
-      if (selectedCategory !== 'all' && item.category !== selectedCategory) {
-        return false
+      // Only show items from current user's wardrobe when not viewing a shared wardrobe
+      if (!selectedSharedWardrobe) {
+        // Category filter
+        if (selectedCategory !== 'all' && item.category !== selectedCategory) {
+          return false
+        }
+        // Brand filter
+        if (selectedBrand !== 'all' && item.brand !== selectedBrand) {
+          return false
+        }
+        // Material filter
+        if (selectedMaterial !== 'all' && item.material !== selectedMaterial) {
+          return false
+        }
+        // Size filter
+        if (selectedSize !== 'all' && item.size?.toString() !== selectedSize) {
+          return false
+        }
+        // Preference filter
+        if (selectedPreference !== 'all') {
+          const isLiked = itemPreferences[item.id]
+          if (selectedPreference === 'liked' && !isLiked) return false
+          if (selectedPreference === 'disliked' && isLiked) return false
+        }
+        // Search filter
+        if (searchQuery) {
+          const query = searchQuery.toLowerCase()
+          return (
+            item.name.toLowerCase().includes(query) ||
+            item.brand?.toLowerCase().includes(query) ||
+            item.material?.toLowerCase().includes(query)
+          )
+        }
+        return true
       }
-      // Brand filter
-      if (selectedBrand !== 'all' && item.brand !== selectedBrand) {
-        return false
-      }
-      // Material filter
-      if (selectedMaterial !== 'all' && item.material !== selectedMaterial) {
-        return false
-      }
-      // Size filter
-      if (selectedSize !== 'all' && item.size?.toString() !== selectedSize) {
-        return false
-      }
-      // Preference filter
-      if (selectedPreference !== 'all') {
-        const isLiked = itemPreferences[item.id]
-        if (selectedPreference === 'liked' && !isLiked) return false
-        if (selectedPreference === 'disliked' && isLiked) return false
-      }
-      // Search filter
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase()
-        return (
-          item.name.toLowerCase().includes(query) ||
-          item.brand?.toLowerCase().includes(query) ||
-          item.material?.toLowerCase().includes(query)
-        )
-      }
-      return true
+      return false // Don't show personal items when viewing a shared wardrobe
     })
     .sort((a, b) => {
       switch (sortBy) {
@@ -439,15 +387,31 @@ export function WardrobePage() {
   }
 
   const handleLogout = () => {
+    // Clear all auth-related data
     localStorage.removeItem('token');
+    localStorage.removeItem('username');
+    
+    // Clear all state
     setItems([]);
     setSharedWardrobes([]);
+    setWardrobesSharedByMe([]);
+    setSharedWardrobeItems({});
+    setSelectedSharedWardrobe(null);
     setIsLoading(true);
+    
+    // Show success message
     toast({
       title: 'Success',
       description: 'Logged out successfully',
     });
-    navigate('/login');
+    
+    // Force navigation to login page
+    window.location.href = '/login';
+  };
+
+  const handleTry = (clothId: string) => {
+    console.log('Try button clicked for cloth:', clothId);
+    // Add your try logic here
   };
 
   if (isLoading) {
@@ -584,30 +548,27 @@ export function WardrobePage() {
                 >
                   <div className="relative group">
                     <div className="relative">
-                      <img
+                      <AuthenticatedImage
                         src={item.image}
                         alt={item.name}
                         className="w-full h-48 object-cover"
                       />
-                      {item.isFavorite ? (
-                        <button
-                          onClick={() => handleUnfavorite(item.id)}
-                          className="absolute top-2 right-2 text-red-500 hover:text-red-700 z-20"
-                        >
+                      <button
+                        onClick={() => handleLike(item.id)}
+                        className="absolute top-2 right-2 z-20"
+                      >
+                        {likedCombinations[item.id] ? (
+                          // Filled heart for liked
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
                           </svg>
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => handleFavorite(item.id)}
-                          className="absolute top-2 right-2 text-gray-400 hover:text-red-500 z-20"
-                        >
+                        ) : (
+                          // Outline heart for not liked
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                           </svg>
-                        </button>
-                      )}
+                        )}
+                      </button>
                     </div>
                     <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 flex flex-col items-center justify-center p-4">
                       <div className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200">
@@ -618,6 +579,12 @@ export function WardrobePage() {
                         {item.sleeveType && <p className="text-sm mb-1">Sleeve: {item.sleeveType}</p>}
                         {item.fitType && <p className="text-sm mb-1">Fit: {item.fitType}</p>}
                         {item.skirtType && <p className="text-sm mb-1">Style: {item.skirtType}</p>}
+                        <button
+                          onClick={() => handleTry(item.id)}
+                          className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                        >
+                          Try
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -653,25 +620,27 @@ export function WardrobePage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* Category Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-            <div className="flex gap-2 overflow-x-auto pb-2">
-              {categories.map((category) => (
-                <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
-                  className={`px-4 py-2 rounded-lg capitalize whitespace-nowrap ${
-                    selectedCategory === category
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  {category}
-                </button>
-              ))}
+          {/* Category Filter - Only show in personal wardrobe view */}
+          {!selectedSharedWardrobe && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                {categories.map((category) => (
+                  <button
+                    key={category}
+                    onClick={() => setSelectedCategory(category)}
+                    className={`px-4 py-2 rounded-lg capitalize whitespace-nowrap ${
+                      selectedCategory === category
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Brand Filter */}
           <div>
@@ -769,30 +738,27 @@ export function WardrobePage() {
           >
             <div className="relative group">
               <div className="relative">
-                <img
+                <AuthenticatedImage
                   src={item.image}
                   alt={item.name}
                   className="w-full h-48 object-cover"
                 />
-                {item.isFavorite ? (
-                  <button
-                    onClick={() => handleUnfavorite(item.id)}
-                    className="absolute top-2 right-2 text-red-500 hover:text-red-700 z-20"
-                  >
+                <button
+                  onClick={() => handleLike(item.id)}
+                  className="absolute top-2 right-2 z-20"
+                >
+                  {likedCombinations[item.id] ? (
+                    // Filled heart for liked
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
                     </svg>
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleFavorite(item.id)}
-                    className="absolute top-2 right-2 text-gray-400 hover:text-red-500 z-20"
-                  >
+                  ) : (
+                    // Outline heart for not liked
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                     </svg>
-                  </button>
-                )}
+                  )}
+                </button>
               </div>
               <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 flex flex-col items-center justify-center p-4">
                 <div className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200">
@@ -803,6 +769,12 @@ export function WardrobePage() {
                   {item.sleeveType && <p className="text-sm mb-1">Sleeve: {item.sleeveType}</p>}
                   {item.fitType && <p className="text-sm mb-1">Fit: {item.fitType}</p>}
                   {item.skirtType && <p className="text-sm mb-1">Style: {item.skirtType}</p>}
+                  <button
+                    onClick={() => handleTry(item.id)}
+                    className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    Try
+                  </button>
                 </div>
               </div>
             </div>

@@ -43,9 +43,9 @@ public class RecommendationController {
         }
         
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.isAuthenticated() && authentication.getPrincipal() instanceof String) {
-            String username = (String) authentication.getPrincipal();
-            String res = clothServices.unfavoriteCloth(clothId, username);
+        if (authentication != null && authentication.getPrincipal() instanceof User) {
+            User user = (User) authentication.getPrincipal();
+            String res = clothServices.unfavoriteCloth(clothId, user.getUsername());
             return ResponseEntity.ok().body(res);
         }
         return ResponseEntity.badRequest().body("User not authenticated");

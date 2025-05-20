@@ -52,21 +52,26 @@ const AddClothModal: React.FC<AddClothModalProps> = ({ isOpen, onClose, onSucces
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (!file) {
-      toast.error('Please select an image file');
+      toast('Please select an image');
+      return;
+    }
+
+    // Validate required fields
+    if (!formData.typ || !formData.size || !formData.size_metrics || !formData.material) {
+      toast('Please fill in all required fields (Type, Size, Size Metrics, and Material)');
       return;
     }
 
     try {
       await clothApi.uploadCloth(file, formData);
-      toast.success('Clothing item added successfully');
+      toast('Clothing item added successfully');
       onSuccess();
       onClose();
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-      }
     } catch (error) {
-      toast.error('Failed to add clothing item');
+      console.error('Submit error:', error);
+      toast(error instanceof Error ? error.message : 'Failed to add clothing item');
     }
   };
 
@@ -210,14 +215,16 @@ const AddClothModal: React.FC<AddClothModalProps> = ({ isOpen, onClose, onSucces
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Material
+                  Material <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   name="material"
                   value={formData.material}
                   onChange={handleInputChange}
-                  className="w-full rounded-md border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter material"
                 />
               </div>
 
