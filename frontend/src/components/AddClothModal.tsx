@@ -13,7 +13,7 @@ interface AddClothModalProps {
 
 const AddClothModal: React.FC<AddClothModalProps> = ({ isOpen, onClose, onSuccess }) => {
   const [file, setFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [showExpandedPreview, setShowExpandedPreview] = useState(false);
   const [formData, setFormData] = useState({
     typ: 'tshirt',
@@ -28,16 +28,21 @@ const AddClothModal: React.FC<AddClothModalProps> = ({ isOpen, onClose, onSucces
     sleeveType: '',
     fitType: '',
     skirtType: '',
+    imageUrl: '',
   });
 
-  const handleFileChange = (file: File) => {
-    setFile(file);
+  const handleFileChange = (url: string) => {
+    setImageUrl(url);
+    setFormData(prev => ({
+      ...prev,
+      imageUrl: url
+    }));
   };
 
   const handlePreviewClick = () => {
     if (file) {
       const url = URL.createObjectURL(file);
-      setPreviewUrl(url);
+      setImageUrl(url);
       setShowExpandedPreview(true);
     }
   };
@@ -53,8 +58,8 @@ const AddClothModal: React.FC<AddClothModalProps> = ({ isOpen, onClose, onSucces
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!file) {
-      toast('Please select an image');
+    if (!imageUrl) {
+      toast('Please upload an image');
       return;
     }
 
@@ -64,8 +69,20 @@ const AddClothModal: React.FC<AddClothModalProps> = ({ isOpen, onClose, onSucces
       return;
     }
 
+    // Convert size to number if it's a valid number
+    const size = parseFloat(formData.size);
+    if (isNaN(size)) {
+      toast('Size must be a valid number');
+      return;
+    }
+
     try {
-      await clothApi.uploadCloth(file, formData);
+      const dataToSend = {
+        ...formData,
+        size: size,
+        imgUrl: formData.imageUrl
+      };
+      await clothApi.addCloth(dataToSend);
       toast('Clothing item added successfully');
       onSuccess();
       onClose();
@@ -76,11 +93,10 @@ const AddClothModal: React.FC<AddClothModalProps> = ({ isOpen, onClose, onSucces
   };
 
   const handleClose = () => {
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
+    if (imageUrl) {
+      URL.revokeObjectURL(imageUrl);
     }
-    setFile(null);
-    setPreviewUrl(null);
+    setImageUrl(null);
     setShowExpandedPreview(false);
     onClose();
   };
@@ -117,11 +133,11 @@ const AddClothModal: React.FC<AddClothModalProps> = ({ isOpen, onClose, onSucces
                       className="mb-2"
                     />
                   </div>
-                  {file && (
+                  {imageUrl && (
                     <div className="flex items-center gap-2">
                       <div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-md">
                         <PhotoIcon className="h-5 w-5 text-gray-500" />
-                        <span className="text-sm text-gray-600">{file.name}</span>
+                        <span className="text-sm text-gray-600">{imageUrl.split('/').pop()}</span>
                         <button
                           type="button"
                           onClick={handlePreviewClick}
@@ -329,22 +345,22 @@ const AddClothModal: React.FC<AddClothModalProps> = ({ isOpen, onClose, onSucces
       </div>
 
       {/* Expanded Preview Modal */}
-      {showExpandedPreview && previewUrl && (
+      {showExpandedPreview && imageUrl && (
         <Dialog open={showExpandedPreview} onClose={() => setShowExpandedPreview(false)} className="relative z-50">
           <div className="fixed inset-0 bg-black/75" aria-hidden="true" />
           <div className="fixed inset-0 flex items-center justify-center p-4">
             <Dialog.Panel className="mx-auto max-w-md w-full">
               <div className="relative bg-white rounded-lg p-2">
                 <img
-                  src={previewUrl}
+                  src={imageUrl}
                   alt="Preview"
                   className="w-full h-auto rounded-lg"
                 />
                 <button
                   onClick={() => {
                     setShowExpandedPreview(false);
-                    URL.revokeObjectURL(previewUrl);
-                    setPreviewUrl(null);
+                    URL.revokeObjectURL(imageUrl);
+                    setImageUrl(null);
                   }}
                   className="absolute top-2 right-2 p-1.5 bg-white rounded-full shadow-md hover:bg-gray-50"
                 >

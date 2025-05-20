@@ -22,6 +22,9 @@ public class Tshirt extends Cloth {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Column(nullable = false)
+    private String name;
+
+    @Column(nullable = false)
     private String sleeveType; // short, long, sleeveless
 
     @Column(nullable = false)
@@ -31,6 +34,13 @@ public class Tshirt extends Cloth {
     private String material;
     public Long getId() {
         return id;
+    }
+    
+    public void setName(String name) {
+        this.name = name;
+    }
+    public String getName() {
+        return name;
     }
     
     public void setId(Long id) {

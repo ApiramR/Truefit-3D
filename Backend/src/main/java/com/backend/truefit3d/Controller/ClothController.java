@@ -162,4 +162,35 @@ public class ClothController {
         }
         return ResponseEntity.badRequest().body("User not authenticated");
     }
+
+    @PostMapping("/clothes")
+    public ResponseEntity<?> addCloth(@RequestBody Map<String, String> data) {
+        try {
+            // Validate required fields
+            if (!data.containsKey("typ") || !data.containsKey("size") || !data.containsKey("size_metrics") || !data.containsKey("imageUrl")) {
+                return ResponseEntity.badRequest().body("Missing required fields");
+            }
+
+            String type = data.get("typ").toLowerCase();
+            String imageUrl = data.get("imageUrl");
+
+            switch (type) {
+                case "tshirt":
+                    clothServices.addTshirt(data, imageUrl);
+                    break;
+                case "jeans":
+                    clothServices.addJeans(data, imageUrl);
+                    break;
+                case "skirt":
+                    clothServices.addSkirt(data, imageUrl);
+                    break;
+                default:
+                    return ResponseEntity.badRequest().body("Invalid clothing type");
+            }
+
+            return ResponseEntity.ok().body("Clothing item added successfully");
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("An error occurred: " + e.getMessage());
+        }
+    }
 }

@@ -1,118 +1,111 @@
-import { useState, useRef } from 'react';
-import Webcam from 'react-webcam';
+import React, { useState } from 'react';
+import axios from 'axios';
 import { motion } from 'framer-motion';
-import { Camera, Upload, X } from 'lucide-react';
+import { Upload } from 'lucide-react';
 import { useToastContext } from '../contexts/ToastContext';
 
+const CLOUDINARY_UPLOAD_URL = 'https://api.cloudinary.com/v1_1/dfxhwpopk/upload';
+const CLOUDINARY_UPLOAD_PRESET = 'ml_default';
+
+interface CloudinaryResponse {
+  secure_url: string;
+  public_id: string;
+}
+
+const uploadToCloudinary = async (file: File): Promise<string> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+  formData.append('cloud_name', 'dfxhwpopk');
+
+  try {
+    const response = await axios.post<CloudinaryResponse>(CLOUDINARY_UPLOAD_URL, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data.secure_url;
+  } catch (error) {
+    console.error('Cloudinary upload error:', error);
+    throw new Error('Failed to upload image to Cloudinary');
+  }
+};
+
 interface ImageUploadProps {
-  onImageUpload: (file: File) => void;
+  onImageUpload: (url: string) => void;
   className?: string;
 }
 
-export default function ImageUpload({ onImageUpload, className }: ImageUploadProps) {
-  const [isWebcamOpen, setIsWebcamOpen] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const webcamRef = useRef<Webcam>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+const ImageUpload = ({ onImageUpload, className = '' }: ImageUploadProps) => {
+  const [isUploading, setIsUploading] = useState(false);
+  const [fileName, setFileName] = useState<string | null>(null);
   const { toast } = useToastContext();
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      if (file.size > 2 * 1024 * 1024) { // 2MB limit
-        toast({
-          title: 'Error',
-          description: 'File size must be less than 2MB',
-          variant: 'destructive',
-        });
-        return;
-      }
-      setSelectedFile(file);
-      onImageUpload(file);
-    }
-  };
+    if (!file) return;
 
-  const handleWebcamCapture = () => {
-    const imageSrc = webcamRef.current?.getScreenshot();
-    if (imageSrc) {
-      // Convert base64 to File
-      fetch(imageSrc)
-        .then(res => res.blob())
-        .then(blob => {
-          const file = new File([blob], 'webcam-capture.jpg', { type: 'image/jpeg' });
-          setSelectedFile(file);
-          onImageUpload(file);
-          setIsWebcamOpen(false);
-        });
+    if (file.size > 2 * 1024 * 1024) { // 2MB limit
+      toast({
+        title: 'Error',
+        description: 'File size must be less than 2MB',
+        variant: 'destructive',
+      });
+      return;
     }
-  };
 
-  const handleRemoveImage = () => {
-    setSelectedFile(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+    setFileName(file.name);
+    setIsUploading(true);
+    try {
+      const imageUrl = await uploadToCloudinary(file);
+      onImageUpload(imageUrl);
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to upload image',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsUploading(false);
     }
   };
 
   return (
     <div className={`space-y-4 ${className}`}>
-      {!isWebcamOpen && (
-        <div className="flex gap-4">
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            <Upload className="w-5 h-5" />
-            {selectedFile ? 'Change Image' : 'Upload Image'}
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setIsWebcamOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-          >
-            <Camera className="w-5 h-5" />
-            Take Photo
-          </motion.button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleFileSelect}
-            className="hidden"
+      <div className="flex items-center justify-center w-full">
+        <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+          <div className="flex flex-col items-center justify-center pt-5 pb-6">
+            <Upload className="w-8 h-8 mb-4 text-gray-500" />
+            <p className="mb-2 text-sm text-gray-500">
+              <span className="font-semibold">Click to upload</span> or drag and drop
+            </p>
+            <p className="text-xs text-gray-500">PNG, JPG or JPEG (MAX. 2MB)</p>
+          </div>
+          <input 
+            type="file" 
+            className="hidden" 
+            accept="image/*" 
+            onChange={handleFileChange} 
+            disabled={isUploading} 
           />
+        </label>
+      </div>
+      
+      {isUploading && (
+        <div className="flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span className="ml-2">Uploading...</span>
         </div>
       )}
 
-      {isWebcamOpen && (
-        <div className="relative">
-          <Webcam
-            ref={webcamRef}
-            screenshotFormat="image/jpeg"
-            className="w-full max-w-md rounded-lg"
-          />
-          <div className="absolute top-2 right-2">
-            <button
-              onClick={() => setIsWebcamOpen(false)}
-              className="p-2 bg-red-600 text-white rounded-full hover:bg-red-700"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-          <div className="mt-2 flex justify-center">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleWebcamCapture}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              Capture
-            </motion.button>
-          </div>
+      {fileName && !isUploading && (
+        <div className="mt-4 text-center text-gray-700">
+          Selected file: <span className="font-semibold">{fileName}</span>
         </div>
       )}
     </div>
   );
-} 
+};
+
+export default ImageUpload; 

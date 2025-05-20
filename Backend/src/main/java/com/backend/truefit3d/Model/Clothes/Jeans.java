@@ -23,16 +23,28 @@ public class Jeans extends Cloth {
     private Long id;
 
     @Column(nullable = false)
+    private String name;
+
+    @Column(nullable = false)
     private String fitType; // skinny, straight, bootcut
 
     @Column(nullable = false)
     private String material;
+
     public Long getId() {
         return id;
     }
     
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+    
+    public void setName(String name) {
+        this.name = name;
     }
     
     public String getFitType() {

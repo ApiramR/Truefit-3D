@@ -45,7 +45,8 @@ public class ClothServices {
 
     public void addTshirt(Map<String, String> data, String imgUrl) {
         Tshirt tshirt = new Tshirt();
-        tshirt.setMaterial(data.getOrDefault("material", "Unknown"));
+        tshirt.setName(data.get("name"));
+        tshirt.setMaterial(data.get("material"));
         tshirt.setNeckType(data.get("neckType"));
         tshirt.setSleeveType(data.get("sleeveType"));
         tshirt.setImgUrl(imgUrl);
@@ -58,6 +59,7 @@ public class ClothServices {
 
     public void addJeans(Map<String, String> data, String imgUrl) {
         Jeans jeans = new Jeans();
+        jeans.setName(data.get("name"));
         jeans.setMaterial(data.getOrDefault("material", "Unknown"));
         jeans.setFitType(data.get("fitType"));
         jeans.setImgUrl(imgUrl);
@@ -70,6 +72,7 @@ public class ClothServices {
 
     public void addSkirt(Map<String, String> data, String imgUrl) {
         Skirt skirt = new Skirt();
+        skirt.setName(data.get("name"));
         skirt.setMaterial(data.getOrDefault("material", "Unknown"));
         skirt.setSkirtType(data.get("skirtType"));
         skirt.setImgUrl(imgUrl);

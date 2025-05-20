@@ -120,7 +120,7 @@ export function WardrobePage() {
         data.tshirts.forEach((item: any) => {
           allItems.push({
             id: item.id.toString(),
-            name: `T-shirt - ${item.brand || 'Unknown Brand'}`,
+            name: item.name || `T-shirt - ${item.brand || 'Unknown Brand'}`,
             category: 'tshirts',
             image: item.imgUrl || '',
             material: item.material,
@@ -138,7 +138,7 @@ export function WardrobePage() {
         data.jeans.forEach((item: any) => {
           allItems.push({
             id: item.id.toString(),
-            name: `Jeans - ${item.brand || 'Unknown Brand'}`,
+            name: item.name || `Jeans - ${item.brand || 'Unknown Brand'}`,
             category: 'jeans',
             image: item.imgUrl || '',
             material: item.material,
@@ -155,7 +155,7 @@ export function WardrobePage() {
         data.skirts.forEach((item: any) => {
           allItems.push({
             id: item.id.toString(),
-            name: `Skirt - ${item.brand || 'Unknown Brand'}`,
+            name: item.name || `Skirt - ${item.brand || 'Unknown Brand'}`,
             category: 'skirts',
             image: item.imgUrl || '',
             material: item.material,

@@ -23,16 +23,28 @@ public class Skirt extends Cloth {
     private Long id;
 
     @Column(nullable = false)
+    private String name;
+
+    @Column(nullable = false)
     private String skirtType; //// pencil, a-line, pleated
 
     @Column(nullable = false)
     private String material;
+
     public Long getId() {
         return id;
     }
     
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+    
+    public void setName(String name) {
+        this.name = name;
     }
     
     public String getSkirtType() {
@@ -50,5 +62,4 @@ public class Skirt extends Cloth {
     public void setMaterial(String material) {
         this.material = material;
     }
-    
 }

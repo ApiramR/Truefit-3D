@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 //const API_BASE_URL = 'http://localhost:8000';
-const API_BASE_URL = 'https://truefit-3d-production.up.railway.app/';
+const API_BASE_URL = 'https://truefit-3d-production-eab1.up.railway.app/';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -71,7 +71,7 @@ export interface ClothData {
   name: string;
   description?: string;
   price?: string;
-  size: string;
+  size: number;
   color?: string;
   material?: string;
   brand?: string;
@@ -80,6 +80,7 @@ export interface ClothData {
   sleeveType?: string;
   fitType?: string;
   skirtType?: string;
+  imgUrl: string;
 }
 
 export interface OAuth2ProfileData {
@@ -457,6 +458,17 @@ const clothApi = {
         localStorage.removeItem('token');
         localStorage.removeItem('username');
         window.location.href = '/login';
+      }
+      throw error;
+    }
+  },
+  addCloth: async (data: ClothData) => {
+    try {
+      const response = await api.post('/clothes', data);
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data || 'Failed to add clothing item');
       }
       throw error;
     }
