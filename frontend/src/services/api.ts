@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 //const API_BASE_URL = 'http://localhost:8000';
+//const API_BASE_URL = 'https://truefit-3d-production.up.railway.app/';
 const API_BASE_URL = 'https://truefit-3d-production-eab1.up.railway.app/';
 
 const api = axios.create({
@@ -14,14 +15,12 @@ const api = axios.create({
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
-    // For multipart/form-data requests, we need to set the Authorization header
-    // but not the Content-Type header as it will be set automatically with the boundary
-    const contentType = config.headers['Content-Type'];
-    if (typeof contentType === 'string' && contentType.includes('multipart/form-data')) {
-      config.headers.Authorization = `Bearer ${token}`;
-      delete config.headers['Content-Type']; // Let axios set the correct Content-Type with boundary
-    } else {
-      config.headers.Authorization = `Bearer ${token}`;
+    // Always set the Authorization header
+    config.headers.Authorization = `Bearer ${token}`;
+    
+    // For multipart/form-data requests, let axios set the Content-Type header
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
     }
   }
   return config;
@@ -33,9 +32,17 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    console.log('API Error:', {
+      status: error.response?.status,
+      url: error.config?.url,
+      path: window.location.pathname
+    });
+    
     if (error.response?.status === 401) {
-      // Only redirect if not already on login page
-      if (!window.location.pathname.includes('/login')) {
+      // Only redirect if not already on login page and not uploading profile image
+      if (!window.location.pathname.includes('/login') && 
+          !error.config.url?.includes('/upload-profile-image')) {
+        console.log('Redirecting to login due to 401');
         localStorage.removeItem('token');
         window.location.href = '/login';
       }
@@ -95,6 +102,20 @@ export interface UserProfile {
   gender: string;
   role: string;
   createdAt: string;
+  profileImageUrl?: string;
+}
+
+export interface Brand {
+  id: number;
+  name: string;
+  description?: string;
+}
+
+export interface Company {
+  id: number;
+  name: string;
+  description?: string;
+  website?: string;
 }
 
 const authApi = {
@@ -231,12 +252,43 @@ const authApi = {
     }
   },
 
+  uploadProfileImage: async (file: File): Promise<{ message: string; imageUrl: string }> => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await api.post('/upload-profile-image', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.message || 'Failed to upload profile image');
+      }
+      throw error;
+    }
+  },
+
   changePassword: async (data: { currentPassword: string; newPassword: string }): Promise<void> => {
     try {
       await api.post('/change-password', data);
     } catch (error) {
       if (axios.isAxiosError(error)) {
         throw new Error(error.response?.data || 'Failed to change password');
+      }
+      throw error;
+    }
+  },
+
+  updateProfileImage: async (imageUrl: string): Promise<{ message: string; imageUrl: string }> => {
+    try {
+      const response = await api.post('/update-profile-image', { imageUrl });
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.message || 'Failed to update profile image');
       }
       throw error;
     }
@@ -469,6 +521,133 @@ const clothApi = {
     } catch (error) {
       if (axios.isAxiosError(error)) {
         throw new Error(error.response?.data || 'Failed to add clothing item');
+      }
+      throw error;
+    }
+  },
+  tryOn: async (clothId: string): Promise<{ message: string; resultImageUrl: string }> => {
+    try {
+      const response = await api.post('/try-on', { clothId });
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data || 'Failed to try on clothing item');
+      }
+      throw error;
+    }
+  },
+  getProfile: async () => {
+    const response = await api.get('/profile');
+    return response.data;
+  },
+
+  // Admin methods
+  createAdmin: async (formData: {
+    username: string;
+    email: string;
+    password: string;
+    gender: string;
+  }) => {
+    const response = await api.post('/admin/create-admin', formData);
+    return response.data;
+  },
+
+  getAllUsers: async () => {
+    const response = await api.get('/admin/users');
+    return response.data;
+  },
+
+  // Brand management
+  getAllBrands: async (): Promise<Brand[]> => {
+    try {
+      const response = await api.get('/admin/brands');
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data || 'Failed to fetch brands');
+      }
+      throw error;
+    }
+  },
+
+  createBrand: async (data: { name: string; description?: string }): Promise<Brand> => {
+    try {
+      const response = await api.post('/admin/brands', data);
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data || 'Failed to create brand');
+      }
+      throw error;
+    }
+  },
+
+  updateBrand: async (id: number, data: { name: string; description?: string }): Promise<Brand> => {
+    try {
+      const response = await api.put(`/admin/brands/${id}`, data);
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data || 'Failed to update brand');
+      }
+      throw error;
+    }
+  },
+
+  deleteBrand: async (id: number): Promise<void> => {
+    try {
+      await api.delete(`/admin/brands/${id}`);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data || 'Failed to delete brand');
+      }
+      throw error;
+    }
+  },
+
+  // Company management
+  getAllCompanies: async (): Promise<Company[]> => {
+    try {
+      const response = await api.get('/admin/companies');
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data || 'Failed to fetch companies');
+      }
+      throw error;
+    }
+  },
+
+  createCompany: async (data: { name: string; description?: string; website?: string }): Promise<Company> => {
+    try {
+      const response = await api.post('/admin/companies', data);
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data || 'Failed to create company');
+      }
+      throw error;
+    }
+  },
+
+  updateCompany: async (id: number, data: { name: string; description?: string; website?: string }): Promise<Company> => {
+    try {
+      const response = await api.put(`/admin/companies/${id}`, data);
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data || 'Failed to update company');
+      }
+      throw error;
+    }
+  },
+
+  deleteCompany: async (id: number): Promise<void> => {
+    try {
+      await api.delete(`/admin/companies/${id}`);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data || 'Failed to delete company');
       }
       throw error;
     }

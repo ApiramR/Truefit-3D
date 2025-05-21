@@ -11,17 +11,14 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Inheritance;
 import jakarta.persistence.InheritanceType;
-import lombok.Getter;
-import lombok.Setter;
 
-@Getter
-@Setter
 @Entity
 @Inheritance(strategy=InheritanceType.JOINED)
 public class Cloth {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    
     @Column(nullable = true)
     private String brand;
 
@@ -84,6 +81,14 @@ public class Cloth {
         this.color = color;
     }
     
+    public String getMaterial() {
+        return material;
+    }
+    
+    public void setMaterial(String material) {
+        this.material = material;
+    }
+    
     public Date getCreatedAt() {
         return createdAt;
     }
@@ -98,13 +103,5 @@ public class Cloth {
     
     public void setImgUrl(String imgUrl) {
         this.imgUrl = imgUrl;
-    }
-    
-    public String getMaterial() {
-        return material;
-    }
-    
-    public void setMaterial(String material) {
-        this.material = material;
     }
 }

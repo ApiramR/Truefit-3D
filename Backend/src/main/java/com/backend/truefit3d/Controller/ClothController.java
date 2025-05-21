@@ -6,6 +6,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.UUID;
+import java.util.Base64;
+import java.util.HashMap;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,12 +19,31 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.*;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
+
+import com.cloudinary.Cloudinary;
+
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+
+import com.backend.truefit3d.Model.Clothes.Cloth;
+import com.backend.truefit3d.Model.Clothes.Tshirt;
+import com.backend.truefit3d.Model.Clothes.Jeans;
+import com.backend.truefit3d.Model.Clothes.Skirt;
+import com.backend.truefit3d.Model.User;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.util.stream.Collectors;
+
+import org.springframework.http.HttpStatus;
 
 import com.backend.truefit3d.Service.ClothServices;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import com.backend.truefit3d.Model.User;
 
 @RestController
 public class ClothController {
@@ -161,6 +182,159 @@ public class ClothController {
             }
         }
         return ResponseEntity.badRequest().body("User not authenticated");
+    }
+
+    @PostMapping("/try-on")
+    public ResponseEntity<?> Tryon(@RequestBody Map<String, String> request) {
+        try {
+            String clothId = request.get("clothId");
+            if (clothId == null) {
+                return ResponseEntity.badRequest().body("Cloth ID is required");
+            }
+
+            // Get current user for profile image
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !(authentication.getPrincipal() instanceof User)) {
+                return ResponseEntity.badRequest().body("User not authenticated");
+            }
+            User user = (User) authentication.getPrincipal();
+            String humanImageUrl = user.getProfileImageUrl();
+            if (humanImageUrl == null) {
+                return ResponseEntity.badRequest().body("User profile image is required");
+            }
+
+            // Get cloth details
+            Cloth cloth = clothServices.getClothById(clothId);
+            if (cloth == null) {
+                return ResponseEntity.badRequest().body("Cloth not found");
+            }
+            String garmentImageUrl = cloth.getImgUrl();
+            if (garmentImageUrl == null) {
+                return ResponseEntity.badRequest().body("Cloth image is required");
+            }
+
+            // Determine category based on cloth type
+            String category;
+            if (cloth instanceof Tshirt) {
+                category = "upper_body";
+            } else if (cloth instanceof Jeans || cloth instanceof Skirt) {
+                category = "lower_body";
+            } else {
+                return ResponseEntity.badRequest().body("Unsupported cloth type");
+            }
+
+            // Create description from cloth details
+            StringBuilder description = new StringBuilder();
+            description.append(cloth.getColor()).append(" ");
+            description.append(cloth.getMaterial()).append(" ");
+            description.append(cloth.getSize()).append(" ");
+            description.append(cloth.getSize_metrics()).append(" ");
+
+            if (cloth instanceof Tshirt) {
+                Tshirt tshirt = (Tshirt) cloth;
+                description.append(tshirt.getNeckType()).append(" neck ");
+                description.append(tshirt.getSleeveType()).append(" sleeve ");
+            } else if (cloth instanceof Jeans) {
+                Jeans jeans = (Jeans) cloth;
+                description.append(jeans.getFitType()).append(" fit ");
+            } else if (cloth instanceof Skirt) {
+                Skirt skirt = (Skirt) cloth;
+                description.append(skirt.getSkirtType()).append(" style ");
+            }
+
+            // Prepare the request to Hugging Face API
+            String apiUrl = "https://if-oo-try-on-1.hf.space/tryon/";
+            
+            try {
+                // Download images
+                byte[] humanImage = downloadImage(humanImageUrl);
+                byte[] garmentImage = downloadImage(garmentImageUrl);
+
+                // Create multipart request
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+                MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+                body.add("human_image", new ByteArrayResource(humanImage) {
+                    @Override
+                    public String getFilename() {
+                        return "human.jpg";
+                    }
+                });
+                body.add("garment_image", new ByteArrayResource(garmentImage) {
+                    @Override
+                    public String getFilename() {
+                        return "garment.jpg";
+                    }
+                });
+                body.add("garment_description", description.toString());
+                body.add("category", category);
+                body.add("use_auto_mask", "true");
+                body.add("use_auto_crop", "false");
+
+                HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+
+                // Make the API call
+                RestTemplate restTemplate = new RestTemplate();
+                ResponseEntity<Map> response = restTemplate.exchange(
+                    apiUrl,
+                    HttpMethod.POST,
+                    requestEntity,
+                    Map.class
+                );
+
+                // Get the result image URL from the response
+                Map<String, Object> responseBody = response.getBody();
+                if (responseBody != null && responseBody.containsKey("result_image")) {
+                    String resultImageBase64 = (String) responseBody.get("result_image");
+                    // Convert base64 to image and upload to Cloudinary
+                    String cloudinaryUrl = uploadToCloudinary(resultImageBase64);
+                    return ResponseEntity.ok(Map.of(
+                        "message", "Try-on completed successfully",
+                        "resultImageUrl", cloudinaryUrl
+                    ));
+                }
+
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to get result image from API");
+
+            } catch (IOException e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to process images: " + e.getMessage());
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Error during try-on process: " + e.getMessage());
+        }
+    }
+
+    private byte[] downloadImage(String imageUrl) throws IOException {
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity<byte[]> response = restTemplate.getForEntity(imageUrl, byte[].class);
+        return response.getBody();
+    }
+
+    private String uploadToCloudinary(String base64Image) throws IOException {
+        // Remove data URL prefix if present
+        if (base64Image.contains(",")) {
+            base64Image = base64Image.split(",")[1];
+        }
+
+        // Decode base64 to image
+        byte[] imageBytes = Base64.getDecoder().decode(base64Image);
+        
+        // Upload to Cloudinary
+        Map<String, String> config = new HashMap<>();
+        config.put("cloud_name", "dfxhwpopk");
+        config.put("api_key", "866187317793619");
+        config.put("api_secret", "9M0nZb3HpGzHLVaY10_u437GMck");
+        
+        Cloudinary cloudinary = new Cloudinary(config);
+        Map<String, Object> uploadResult = cloudinary.uploader().upload(imageBytes, new HashMap<>());
+        
+        return (String) uploadResult.get("secure_url");
     }
 
     @PostMapping("/clothes")

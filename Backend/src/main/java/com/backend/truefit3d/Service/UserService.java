@@ -24,6 +24,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.backend.truefit3d.Utills.utilfunctions;
 
+import jakarta.annotation.PostConstruct;
+
 @Service
 public class UserService implements UserDetailsService {
     @Autowired
@@ -152,5 +154,56 @@ public class UserService implements UserDetailsService {
             return true;
         }
         return false;
+    }
+
+    public User saveUser(User user) {
+        return userRepo.save(user);
+    }
+
+    @PostConstruct
+    public void createInitialAdmin() {
+        try {
+            // Check if admin already exists
+            if (userRepo.findByUsername("admin") == null) {
+                User admin = new User();
+                admin.setUsername("admin");
+                admin.setEmail("admin@truefit3d.com");
+                admin.setPassword(passwordEncoder.encode("admin123")); // Change this in production!
+                admin.setGender("male");
+                admin.setRole("ADMIN");
+                userRepo.save(admin);
+                System.out.println("Initial admin account created");
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to create initial admin account: " + e.getMessage());
+        }
+    }
+
+    // Add method to create new admin (only callable by existing admin)
+    public boolean createAdmin(Map<String, String> formData, String currentUsername) {
+        try {
+            // Check if current user is admin
+            User currentUser = userRepo.findByUsername(currentUsername);
+            if (currentUser == null || !currentUser.getRole().equals("ADMIN")) {
+                return false;
+            }
+
+            // Create new admin
+            User newAdmin = new User();
+            newAdmin.setUsername(formData.get("username"));
+            newAdmin.setEmail(formData.get("email"));
+            newAdmin.setPassword(passwordEncoder.encode(formData.get("password")));
+            newAdmin.setGender(formData.get("gender"));
+            newAdmin.setRole("ADMIN");
+            userRepo.save(newAdmin);
+            return true;
+        } catch (Exception e) {
+            System.err.println("Failed to create admin account: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public List<User> getAllUsers() {
+        return userRepo.findAll();
     }
 }

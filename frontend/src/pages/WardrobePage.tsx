@@ -76,6 +76,8 @@ export function WardrobePage() {
   const [selectedSharedWardrobe, setSelectedSharedWardrobe] = useState<string | null>(null);
   const [sharedWardrobeItems, setSharedWardrobeItems] = useState<Record<string, SharedWardrobeItem[]>>({});
   const [likedCombinations, setLikedCombinations] = useState<{ [id: string]: boolean }>({});
+  const [tryOnResult, setTryOnResult] = useState<{ imageUrl: string; itemName: string } | null>(null);
+  const [isTryingOn, setIsTryingOn] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token')
@@ -409,9 +411,26 @@ export function WardrobePage() {
     window.location.href = '/login';
   };
 
-  const handleTry = (clothId: string) => {
-    console.log('Try button clicked for cloth:', clothId);
-    // Add your try logic here
+  const handleTry = async (clothId: string, itemName: string) => {
+    try {
+      setIsTryingOn(true);
+      const result = await clothApi.tryOn(clothId);
+      setTryOnResult({ imageUrl: result.resultImageUrl, itemName });
+      toast({
+        title: 'Success',
+        description: 'Try-on completed successfully!',
+      });
+      // Navigate to home page to show the result
+      navigate('/', { state: { tryOnResult: { imageUrl: result.resultImageUrl, itemName } } });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to try on item',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsTryingOn(false);
+    }
   };
 
   if (isLoading) {
@@ -482,21 +501,23 @@ export function WardrobePage() {
             )}
 
             {/* Wardrobes I've shared */}
-            {wardrobesSharedByMe.length > 0 && (
+            {wardrobesSharedByMe.filter(share => share.isActive).length > 0 && (
               <div className="bg-white p-4 rounded-lg shadow">
                 <h3 className="font-semibold mb-2">Shared by me</h3>
                 <ul className="space-y-2">
-                  {wardrobesSharedByMe.map((share) => (
-                    <li key={share.id} className="flex justify-between items-center">
-                      <span>{share.sharedWithUsername}</span>
-                      <button
-                        onClick={() => handleUnshare(share.sharedWithUsername)}
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        Unshare
-                      </button>
-                    </li>
-                  ))}
+                  {wardrobesSharedByMe
+                    .filter(share => share.isActive)
+                    .map((share) => (
+                      <li key={share.id} className="flex justify-between items-center">
+                        <span>{share.sharedWithUsername}</span>
+                        <button
+                          onClick={() => handleUnshare(share.sharedWithUsername)}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          Unshare
+                        </button>
+                      </li>
+                    ))}
                 </ul>
               </div>
             )}
@@ -580,10 +601,11 @@ export function WardrobePage() {
                         {item.fitType && <p className="text-sm mb-1">Fit: {item.fitType}</p>}
                         {item.skirtType && <p className="text-sm mb-1">Style: {item.skirtType}</p>}
                         <button
-                          onClick={() => handleTry(item.id)}
-                          className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                          onClick={() => handleTry(item.id, item.name)}
+                          disabled={isTryingOn}
+                          className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-400"
                         >
-                          Try
+                          {isTryingOn ? 'Trying on...' : 'Try'}
                         </button>
                       </div>
                     </div>
@@ -770,10 +792,11 @@ export function WardrobePage() {
                   {item.fitType && <p className="text-sm mb-1">Fit: {item.fitType}</p>}
                   {item.skirtType && <p className="text-sm mb-1">Style: {item.skirtType}</p>}
                   <button
-                    onClick={() => handleTry(item.id)}
-                    className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    onClick={() => handleTry(item.id, item.name)}
+                    disabled={isTryingOn}
+                    className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-400"
                   >
-                    Try
+                    {isTryingOn ? 'Trying on...' : 'Try'}
                   </button>
                 </div>
               </div>

@@ -1,8 +1,11 @@
 package com.backend.truefit3d.Controller;
 
 import java.util.Map;
+import java.util.HashMap;
+import java.io.IOException;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -11,11 +14,14 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.backend.truefit3d.Model.User;
 import com.backend.truefit3d.Service.OtpService;
 import com.backend.truefit3d.Service.UserService;
 import com.backend.truefit3d.Utills.JwtConfig;
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 
 @RestController
 public class AuthenticationController {
@@ -87,14 +93,14 @@ public class AuthenticationController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getPrincipal() instanceof User) {
             User user = (User) authentication.getPrincipal();
-            // Create a map with user details, excluding sensitive information
-            Map<String, Object> userDetails = Map.of(
-                "username", user.getUsername(),
-                "email", user.getEmail(),
-                "gender", user.getGender(),
-                "role", user.getRole(),
-                "createdAt", user.getCreatedAt()
-            );
+            // Use HashMap to allow null values
+            Map<String, Object> userDetails = new HashMap<>();
+            userDetails.put("username", user.getUsername());
+            userDetails.put("email", user.getEmail());
+            userDetails.put("gender", user.getGender());
+            userDetails.put("role", user.getRole());
+            userDetails.put("createdAt", user.getCreatedAt());
+            userDetails.put("profileImageUrl", user.getProfileImageUrl());
             return ResponseEntity.ok(userDetails);
         }
         return ResponseEntity.badRequest().body("User not authenticated");
@@ -161,5 +167,63 @@ public class AuthenticationController {
         }
         System.out.println("Failed to update profile for email: " + email);
         return ResponseEntity.badRequest().body("Failed to update profile");
+    }
+
+    @PostMapping("/update-profile-image")
+    public ResponseEntity<?> updateProfileImage(@RequestBody Map<String, String> data) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof User) {
+            User user = (User) authentication.getPrincipal();
+            String imageUrl = data.get("imageUrl");
+            if (imageUrl != null) {
+                user.setProfileImageUrl(imageUrl);
+                userService.saveUser(user);
+                return ResponseEntity.ok().body(Map.of(
+                    "message", "Profile image updated successfully",
+                    "imageUrl", imageUrl
+                ));
+            }
+            return ResponseEntity.badRequest().body("Image URL is required");
+        }
+        return ResponseEntity.badRequest().body("User not authenticated");
+    }
+
+    @PostMapping(value = "/upload-profile-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> uploadProfileImage(@RequestParam("file") MultipartFile file) {
+        try {
+            if (file.isEmpty()) {
+                return ResponseEntity.badRequest().body("File is missing");
+            }
+
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !(authentication.getPrincipal() instanceof User)) {
+                return ResponseEntity.badRequest().body("User not authenticated");
+            }
+
+            User user = (User) authentication.getPrincipal();
+            
+            // Upload to Cloudinary
+            Map<String, String> config = new HashMap<>();
+            config.put("cloud_name", "dfxhwpopk");
+            config.put("api_key", "866187317793619");
+            config.put("api_secret", "9M0nZb3HpGzHLVaY10_u437GMck");
+            
+            Cloudinary cloudinary = new Cloudinary(config);
+            Map<String, Object> uploadResult = cloudinary.uploader().upload(file.getBytes(), new HashMap<>());
+            String imageUrl = (String) uploadResult.get("secure_url");
+
+            // Update user's profile image URL
+            user.setProfileImageUrl(imageUrl);
+            userService.saveUser(user);
+
+            return ResponseEntity.ok().body(Map.of(
+                "message", "Profile image uploaded successfully",
+                "imageUrl", imageUrl
+            ));
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError().body("Failed to upload image: " + e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("An error occurred: " + e.getMessage());
+        }
     }
 }

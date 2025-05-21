@@ -8,6 +8,7 @@ import ProfilePage from './pages/ProfilePage';
 import { SignupPage } from './pages/SignupPage';
 import { CompleteProfilePage } from './pages/CompleteProfilePage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
+import { AdminPortal } from './pages/AdminPortal';
 import { Toast } from './components/Toast';
 import { ToastProvider } from './contexts/ToastContext';
 import { AuthProvider } from './contexts/AuthContext';
@@ -34,6 +35,11 @@ function AppRoutes() {
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/complete-profile" element={<CompleteProfilePage />} />
+        <Route path="/admin" element={
+          <ProtectedRoute>
+            <AdminPortal />
+          </ProtectedRoute>
+        } />
         <Route path="/" element={
           <ProtectedRoute>
             <HomePage />

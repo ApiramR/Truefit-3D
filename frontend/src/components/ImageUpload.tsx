@@ -45,14 +45,14 @@ const ImageUpload = ({ onImageUpload, className = '' }: ImageUploadProps) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 2 * 1024 * 1024) { // 2MB limit
-      toast({
-        title: 'Error',
-        description: 'File size must be less than 2MB',
-        variant: 'destructive',
-      });
-      return;
-    }
+      if (file.size > 2 * 1024 * 1024) { // 2MB limit
+        toast({
+          title: 'Error',
+          description: 'File size must be less than 2MB',
+          variant: 'destructive',
+        });
+        return;
+      }
 
     setFileName(file.name);
     setIsUploading(true);
@@ -82,10 +82,10 @@ const ImageUpload = ({ onImageUpload, className = '' }: ImageUploadProps) => {
             </p>
             <p className="text-xs text-gray-500">PNG, JPG or JPEG (MAX. 2MB)</p>
           </div>
-          <input 
-            type="file" 
+          <input
+            type="file"
             className="hidden" 
-            accept="image/*" 
+            accept="image/*"
             onChange={handleFileChange} 
             disabled={isUploading} 
           />

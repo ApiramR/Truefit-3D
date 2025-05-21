@@ -36,7 +36,7 @@ public class SecurityConfig {
                 .requestMatchers("/register", "/login", "/login/oauth2/**", "/oauth2/**", "/complete-oauth2-profile").permitAll()
                 .requestMatchers("/uploads/**").hasRole("USER")
                 .requestMatchers("/admin/**").hasRole("ADMIN")
-                .requestMatchers("/**").hasRole("USER")
+                .requestMatchers("/**").permitAll()
                 .anyRequest().authenticated())
             .oauth2Login(oauth2 -> oauth2
                 .loginPage("/oauth2/authorization/google")

@@ -102,7 +102,7 @@ public class ClothServices {
         clothCombinationRepo.save(clothCombination);
         return "Added to favorites";
     }
-
+    
     public String dislikeCloth(String code, String username) {
         // This is for disliking cloth combinations
         ClothCombination ExistsclothCombination = clothCombinationRepo.findByClothidAndUsername(code, username);
@@ -252,5 +252,19 @@ public class ClothServices {
             return "Removed from favorites";
         }
         return "Item not found";
+    }
+
+    public Cloth getClothById(String clothId) {
+        // Try to find in each repository
+        Tshirt tshirt = tshirtRepo.findById(Long.parseLong(clothId)).orElse(null);
+        if (tshirt != null) return tshirt;
+
+        Jeans jeans = jeansRepo.findById(Long.parseLong(clothId)).orElse(null);
+        if (jeans != null) return jeans;
+
+        Skirt skirt = skirtRepo.findById(Long.parseLong(clothId)).orElse(null);
+        if (skirt != null) return skirt;
+
+        return null;
     }
 }

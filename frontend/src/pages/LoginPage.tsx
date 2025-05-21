@@ -101,6 +101,10 @@ export function LoginPage() {
         password: formData.password
       })
       
+      // Get user profile to check role
+      const profile = await authApi.getProfile();
+      console.log('Login profile:', profile);
+      
       login(token, formData.username)
       
       toast({
@@ -108,7 +112,12 @@ export function LoginPage() {
         description: 'Logged in successfully!',
       })
       
-      navigate('/')
+      // Redirect based on role
+      if (profile.role === 'ADMIN') {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
     } catch (error) {
       toast({
         title: 'Error',

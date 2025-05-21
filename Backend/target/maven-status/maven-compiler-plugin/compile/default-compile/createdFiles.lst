@@ -5,6 +5,7 @@ com\backend\truefit3d\Utills\OAuth2SuccessHandler.class
 com\backend\truefit3d\Utills\utilfunctions.class
 com\backend\truefit3d\Utills\WebConfig.class
 com\backend\truefit3d\Utills\SecurityConfig.class
+com\backend\truefit3d\Controller\ClothController$2.class
 com\backend\truefit3d\Repo\JeansRepo.class
 com\backend\truefit3d\Service\ClothServices.class
 com\backend\truefit3d\Utills\authconfig.class
@@ -14,9 +15,11 @@ com\backend\truefit3d\Utills\JwtConfig.class
 com\backend\truefit3d\Controller\RecommendationController.class
 com\backend\truefit3d\Service\OtpService.class
 com\backend\truefit3d\Utills\CacheConfig.class
+com\backend\truefit3d\Config\SecurityConfig.class
 com\backend\truefit3d\Repo\TshirtRepo.class
 com\backend\truefit3d\Controller\AuthenticationController.class
 com\backend\truefit3d\Model\Clothes\Skirt.class
+com\backend\truefit3d\Controller\ClothController$1.class
 com\backend\truefit3d\Model\User.class
 com\backend\truefit3d\Repo\ClothCombinationRepo.class
 com\backend\truefit3d\Service\UserService.class

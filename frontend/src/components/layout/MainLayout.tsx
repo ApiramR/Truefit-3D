@@ -1,9 +1,26 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
+import { useState, useEffect } from 'react'
+import { clothApi } from '../../services/api'
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, username, logout } = useAuth()
   const navigate = useNavigate()
+  const [userRole, setUserRole] = useState<string>('')
+
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      if (isAuthenticated) {
+        try {
+          const profile = await clothApi.getProfile()
+          setUserRole(profile.role)
+        } catch (error) {
+          console.error('Failed to fetch user role:', error)
+        }
+      }
+    }
+    fetchUserRole()
+  }, [isAuthenticated])
 
   const handleLogout = () => {
     logout()
@@ -29,12 +46,22 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                   >
                     Home
                   </Link>
-                  <Link
-                    to="/wardrobe"
-                    className="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
-                  >
-                    Wardrobe
-                  </Link>
+                  {userRole !== 'ADMIN' && (
+                    <Link
+                      to="/wardrobe"
+                      className="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                    >
+                      Wardrobe
+                    </Link>
+                  )}
+                  {userRole === 'ADMIN' && (
+                    <Link
+                      to="/admin"
+                      className="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                    >
+                      Admin Portal
+                    </Link>
+                  )}
                   <Link
                     to="/profile"
                     className="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"

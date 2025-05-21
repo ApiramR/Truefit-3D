@@ -1,9 +1,9 @@
 -------------------------------------------------------------------------------
 Test set: com.backend.truefit3d.Truefit3dApplicationTests
 -------------------------------------------------------------------------------
-Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 0.462 s <<< FAILURE! -- in com.backend.truefit3d.Truefit3dApplicationTests
-com.backend.truefit3d.Truefit3dApplicationTests.contextLoads -- Time elapsed: 0.005 s <<< ERROR!
-java.lang.IllegalStateException: Failed to load ApplicationContext for [WebMergedContextConfiguration@2d83c5a5 testClass = com.backend.truefit3d.Truefit3dApplicationTests, locations = [], classes = [com.backend.truefit3d.Truefit3dApplication], contextInitializerClasses = [], activeProfiles = [], propertySourceDescriptors = [], propertySourceProperties = ["org.springframework.boot.test.context.SpringBootTestContextBootstrapper=true"], contextCustomizers = [org.springframework.boot.test.context.filter.ExcludeFilterContextCustomizer@6a4f1a55, org.springframework.boot.test.json.DuplicateJsonObjectContextCustomizerFactory$DuplicateJsonObjectContextCustomizer@7d3e8655, org.springframework.boot.test.mock.mockito.MockitoContextCustomizer@0, org.springframework.boot.test.web.client.TestRestTemplateContextCustomizer@37313c65, org.springframework.boot.test.web.reactor.netty.DisableReactorResourceFactoryGlobalResourcesContextCustomizerFactory$DisableReactorResourceFactoryGlobalResourcesContextCustomizerCustomizer@1e16c0aa, org.springframework.boot.test.autoconfigure.OnFailureConditionReportContextCustomizerFactory$OnFailureConditionReportContextCustomizer@7dc3712, org.springframework.boot.test.autoconfigure.actuate.observability.ObservabilityContextCustomizerFactory$DisableObservabilityContextCustomizer@1f, org.springframework.boot.test.autoconfigure.properties.PropertyMappingContextCustomizer@0, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverContextCustomizer@28194a50, org.springframework.test.context.support.DynamicPropertiesContextCustomizer@0, org.springframework.boot.test.context.SpringBootTestAnnotation@1e0b55c2], resourceBasePath = "src/main/webapp", contextLoader = org.springframework.boot.test.context.SpringBootContextLoader, parent = null]
+Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 0.928 s <<< FAILURE! -- in com.backend.truefit3d.Truefit3dApplicationTests
+com.backend.truefit3d.Truefit3dApplicationTests.contextLoads -- Time elapsed: 0.011 s <<< ERROR!
+java.lang.IllegalStateException: Failed to load ApplicationContext for [WebMergedContextConfiguration@298d9a05 testClass = com.backend.truefit3d.Truefit3dApplicationTests, locations = [], classes = [com.backend.truefit3d.Truefit3dApplication], contextInitializerClasses = [], activeProfiles = [], propertySourceDescriptors = [], propertySourceProperties = ["org.springframework.boot.test.context.SpringBootTestContextBootstrapper=true"], contextCustomizers = [org.springframework.boot.test.context.filter.ExcludeFilterContextCustomizer@6cd24612, org.springframework.boot.test.json.DuplicateJsonObjectContextCustomizerFactory$DuplicateJsonObjectContextCustomizer@f68f0dc, org.springframework.boot.test.mock.mockito.MockitoContextCustomizer@0, org.springframework.boot.test.web.client.TestRestTemplateContextCustomizer@6f36c2f0, org.springframework.boot.test.web.reactor.netty.DisableReactorResourceFactoryGlobalResourcesContextCustomizerFactory$DisableReactorResourceFactoryGlobalResourcesContextCustomizerCustomizer@78452606, org.springframework.boot.test.autoconfigure.OnFailureConditionReportContextCustomizerFactory$OnFailureConditionReportContextCustomizer@4470fbd6, org.springframework.boot.test.autoconfigure.actuate.observability.ObservabilityContextCustomizerFactory$DisableObservabilityContextCustomizer@1f, org.springframework.boot.test.autoconfigure.properties.PropertyMappingContextCustomizer@0, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverContextCustomizer@2bdd8394, org.springframework.test.context.support.DynamicPropertiesContextCustomizer@0, org.springframework.boot.test.context.SpringBootTestAnnotation@f9baaf3], resourceBasePath = "src/main/webapp", contextLoader = org.springframework.boot.test.context.SpringBootContextLoader, parent = null]
 	at org.springframework.test.context.cache.DefaultCacheAwareContextLoaderDelegate.loadContext(DefaultCacheAwareContextLoaderDelegate.java:180)
 	at org.springframework.test.context.support.DefaultTestContext.getApplicationContext(DefaultTestContext.java:130)
 	at org.springframework.test.context.web.ServletTestExecutionListener.setUpRequestContextIfNecessary(ServletTestExecutionListener.java:200)
@@ -24,44 +24,17 @@ java.lang.IllegalStateException: Failed to load ApplicationContext for [WebMerge
 	at java.base/java.util.Optional.orElseGet(Optional.java:364)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
-Caused by: org.springframework.boot.context.properties.bind.BindException: Failed to bind properties under 'logging.level.org.springframework.security' to org.springframework.boot.logging.LogLevel
-	at org.springframework.boot.context.properties.bind.Binder.handleBindError(Binder.java:391)
-	at org.springframework.boot.context.properties.bind.Binder.bind(Binder.java:354)
-	at org.springframework.boot.context.properties.bind.Binder.lambda$bindAggregate$2(Binder.java:439)
-	at org.springframework.boot.context.properties.bind.Binder$Context.withSource(Binder.java:568)
-	at org.springframework.boot.context.properties.bind.Binder.lambda$bindAggregate$3(Binder.java:440)
-	at org.springframework.boot.context.properties.bind.AggregateElementBinder.bind(AggregateElementBinder.java:39)
-	at org.springframework.boot.context.properties.bind.MapBinder$EntryBinder.lambda$bindEntries$0(MapBinder.java:172)
-	at java.base/java.util.HashMap.computeIfAbsent(HashMap.java:1228)
-	at org.springframework.boot.context.properties.bind.MapBinder$EntryBinder.bindEntries(MapBinder.java:172)
-	at org.springframework.boot.context.properties.bind.MapBinder.bindAggregate(MapBinder.java:74)
-	at org.springframework.boot.context.properties.bind.AggregateBinder.bind(AggregateBinder.java:56)
-	at org.springframework.boot.context.properties.bind.Binder.lambda$bindAggregate$4(Binder.java:442)
-	at org.springframework.boot.context.properties.bind.Binder$Context.withIncreasedDepth(Binder.java:597)
-	at org.springframework.boot.context.properties.bind.Binder.bindAggregate(Binder.java:442)
-	at org.springframework.boot.context.properties.bind.Binder.bindObject(Binder.java:403)
-	at org.springframework.boot.context.properties.bind.Binder.bind(Binder.java:350)
-	at org.springframework.boot.context.properties.bind.Binder.bind(Binder.java:339)
-	at org.springframework.boot.context.properties.bind.Binder.bind(Binder.java:269)
-	at org.springframework.boot.context.properties.bind.Binder.bind(Binder.java:243)
-	at org.springframework.boot.context.logging.LoggingApplicationListener.setLogLevels(LoggingApplicationListener.java:393)
-	at org.springframework.boot.context.logging.LoggingApplicationListener.initializeFinalLoggingLevels(LoggingApplicationListener.java:360)
-	at org.springframework.boot.context.logging.LoggingApplicationListener.initialize(LoggingApplicationListener.java:299)
-	at org.springframework.boot.context.logging.LoggingApplicationListener.onApplicationEnvironmentPreparedEvent(LoggingApplicationListener.java:246)
-	at org.springframework.boot.context.logging.LoggingApplicationListener.onApplicationEvent(LoggingApplicationListener.java:223)
-	at org.springframework.context.event.SimpleApplicationEventMulticaster.doInvokeListener(SimpleApplicationEventMulticaster.java:185)
-	at org.springframework.context.event.SimpleApplicationEventMulticaster.invokeListener(SimpleApplicationEventMulticaster.java:178)
-	at org.springframework.context.event.SimpleApplicationEventMulticaster.multicastEvent(SimpleApplicationEventMulticaster.java:156)
-	at org.springframework.context.event.SimpleApplicationEventMulticaster.multicastEvent(SimpleApplicationEventMulticaster.java:138)
-	at org.springframework.boot.context.event.EventPublishingRunListener.multicastInitialEvent(EventPublishingRunListener.java:136)
-	at org.springframework.boot.context.event.EventPublishingRunListener.environmentPrepared(EventPublishingRunListener.java:81)
-	at org.springframework.boot.SpringApplicationRunListeners.lambda$environmentPrepared$2(SpringApplicationRunListeners.java:64)
-	at java.base/java.lang.Iterable.forEach(Iterable.java:75)
-	at org.springframework.boot.SpringApplicationRunListeners.doWithListeners(SpringApplicationRunListeners.java:118)
-	at org.springframework.boot.SpringApplicationRunListeners.doWithListeners(SpringApplicationRunListeners.java:112)
-	at org.springframework.boot.SpringApplicationRunListeners.environmentPrepared(SpringApplicationRunListeners.java:63)
-	at org.springframework.boot.SpringApplication.prepareEnvironment(SpringApplication.java:353)
-	at org.springframework.boot.SpringApplication.run(SpringApplication.java:313)
+Caused by: org.springframework.beans.factory.BeanDefinitionStoreException: Failed to parse configuration class [com.backend.truefit3d.Truefit3dApplication]
+	at org.springframework.context.annotation.ConfigurationClassParser.parse(ConfigurationClassParser.java:193)
+	at org.springframework.context.annotation.ConfigurationClassPostProcessor.processConfigBeanDefinitions(ConfigurationClassPostProcessor.java:418)
+	at org.springframework.context.annotation.ConfigurationClassPostProcessor.postProcessBeanDefinitionRegistry(ConfigurationClassPostProcessor.java:290)
+	at org.springframework.context.support.PostProcessorRegistrationDelegate.invokeBeanDefinitionRegistryPostProcessors(PostProcessorRegistrationDelegate.java:349)
+	at org.springframework.context.support.PostProcessorRegistrationDelegate.invokeBeanFactoryPostProcessors(PostProcessorRegistrationDelegate.java:118)
+	at org.springframework.context.support.AbstractApplicationContext.invokeBeanFactoryPostProcessors(AbstractApplicationContext.java:791)
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:609)
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:752)
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:439)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:318)
 	at org.springframework.boot.test.context.SpringBootContextLoader.lambda$loadContext$3(SpringBootContextLoader.java:144)
 	at org.springframework.util.function.ThrowingSupplier.get(ThrowingSupplier.java:58)
 	at org.springframework.util.function.ThrowingSupplier.get(ThrowingSupplier.java:46)
@@ -72,21 +45,13 @@ Caused by: org.springframework.boot.context.properties.bind.BindException: Faile
 	at org.springframework.test.context.cache.DefaultCacheAwareContextLoaderDelegate.loadContextInternal(DefaultCacheAwareContextLoaderDelegate.java:225)
 	at org.springframework.test.context.cache.DefaultCacheAwareContextLoaderDelegate.loadContext(DefaultCacheAwareContextLoaderDelegate.java:152)
 	... 19 more
-Caused by: org.springframework.core.convert.ConversionFailedException: Failed to convert from type [java.lang.String] to type [org.springframework.boot.logging.LogLevel] for value [${logging_level_org_springframework_security}]
-	at org.springframework.core.convert.support.ConversionUtils.invokeConverter(ConversionUtils.java:47)
-	at org.springframework.core.convert.support.GenericConversionService.convert(GenericConversionService.java:182)
-	at org.springframework.boot.context.properties.bind.BindConverter.convert(BindConverter.java:110)
-	at org.springframework.boot.context.properties.bind.BindConverter.convert(BindConverter.java:101)
-	at org.springframework.boot.context.properties.bind.BindConverter.convert(BindConverter.java:93)
-	at org.springframework.boot.context.properties.bind.Binder.bindProperty(Binder.java:463)
-	at org.springframework.boot.context.properties.bind.Binder.bindObject(Binder.java:407)
-	at org.springframework.boot.context.properties.bind.Binder.bind(Binder.java:350)
-	... 63 more
-Caused by: java.lang.IllegalArgumentException: No enum constant org.springframework.boot.logging.LogLevel.${logging_level_org_springframework_security}
-	at org.springframework.boot.convert.LenientObjectToEnumConverterFactory$LenientToEnumConverter.findEnum(LenientObjectToEnumConverterFactory.java:93)
-	at org.springframework.boot.convert.LenientObjectToEnumConverterFactory$LenientToEnumConverter.convert(LenientObjectToEnumConverterFactory.java:80)
-	at org.springframework.boot.convert.LenientObjectToEnumConverterFactory$LenientToEnumConverter.convert(LenientObjectToEnumConverterFactory.java:61)
-	at org.springframework.core.convert.support.GenericConversionService$ConverterFactoryAdapter.convert(GenericConversionService.java:415)
-	at org.springframework.core.convert.support.ConversionUtils.invokeConverter(ConversionUtils.java:41)
-	... 70 more
+Caused by: org.springframework.context.annotation.ConflictingBeanDefinitionException: Annotation-specified bean name 'securityConfig' for bean class [com.backend.truefit3d.Utills.SecurityConfig] conflicts with existing, non-compatible bean definition of same name and class [com.backend.truefit3d.Config.SecurityConfig]
+	at org.springframework.context.annotation.ClassPathBeanDefinitionScanner.checkCandidate(ClassPathBeanDefinitionScanner.java:361)
+	at org.springframework.context.annotation.ClassPathBeanDefinitionScanner.doScan(ClassPathBeanDefinitionScanner.java:288)
+	at org.springframework.context.annotation.ComponentScanAnnotationParser.parse(ComponentScanAnnotationParser.java:128)
+	at org.springframework.context.annotation.ConfigurationClassParser.doProcessConfigurationClass(ConfigurationClassParser.java:345)
+	at org.springframework.context.annotation.ConfigurationClassParser.processConfigurationClass(ConfigurationClassParser.java:280)
+	at org.springframework.context.annotation.ConfigurationClassParser.parse(ConfigurationClassParser.java:203)
+	at org.springframework.context.annotation.ConfigurationClassParser.parse(ConfigurationClassParser.java:172)
+	... 37 more
 
